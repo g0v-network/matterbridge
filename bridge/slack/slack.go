@@ -427,6 +427,42 @@ func (b *Bslack) postMessage(msg *config.Message, channelInfo *slack.Channel) (s
 	}
 }
 
+func (b *Bslack) createTranslationAttach(msg *config.Message) []slack.Attachment {
+	var attachments []slack.Attachment
+
+	if msg.IsTranslation == false {
+		return attachments
+	}
+
+	untranslatedTextPreview := msg.OrigMsg.Text
+	previewCharCount := 100
+	if len(msg.OrigMsg.Text) > previewCharCount {
+		untranslatedTextPreview = untranslatedTextPreview[:previewCharCount] + "..."
+	}
+	untranslatedTextPreview = strings.Replace(untranslatedTextPreview, "\n", " ", -1)
+	ch, err := b.getChannelByName(msg.OrigMsg.Channel)
+	params := slack.PermalinkParameters{
+		Channel: ch.ID,
+		Ts:      msg.OrigMsg.ID,
+	}
+	b.Log.Debugf("Generating permalink...")
+	permalink, err := b.sc.GetPermalink(&params)
+	if err != nil {
+		b.Log.Println(err)
+	}
+
+	attach := slack.Attachment{
+		Fallback:   untranslatedTextPreview,
+		Text:       fmt.Sprintf("<%s|%s>", permalink, untranslatedTextPreview),
+		Footer:     "g0v Translation Bridge" + b.Config.General.TranslationAttribution,
+		FooterIcon: "https://emoji.slack-edge.com/T02G2SXKM/g0v/541e38dfc833f04b.png",
+	}
+
+	attachments = append(attachments, attach)
+
+	return attachments
+}
+
 // uploadFile handles native upload of files
 func (b *Bslack) uploadFile(msg *config.Message, channelID string) {
 	for _, f := range msg.Extra["file"] {
@@ -481,6 +517,11 @@ func (b *Bslack) prepareMessageOptions(msg *config.Message) []slack.MsgOption {
 	params.Attachments = append(params.Attachments, slack.Attachment{CallbackID: "matterbridge_" + b.uuid})
 	// add file attachments
 	params.Attachments = append(params.Attachments, b.createAttach(msg.Extra)...)
+	// add translation attachment
+	if msg.IsTranslation {
+		// If source, then we're doing a translation
+		params.Attachments = append(params.Attachments, b.createTranslationAttach(msg)...)
+	}
 	// add slack attachments (from another slack bridge)
 	if msg.Extra != nil {
 		for _, attach := range msg.Extra[sSlackAttachment] {

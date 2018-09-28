@@ -27,19 +27,21 @@ const (
 )
 
 type Message struct {
-	Text      string    `json:"text"`
-	Channel   string    `json:"channel"`
-	Username  string    `json:"username"`
-	UserID    string    `json:"userid"` // userid on the bridge
-	Avatar    string    `json:"avatar"`
-	Account   string    `json:"account"`
-	Event     string    `json:"event"`
-	Protocol  string    `json:"protocol"`
-	Gateway   string    `json:"gateway"`
-	ParentID  string    `json:"parent_id"`
-	Timestamp time.Time `json:"timestamp"`
-	ID        string    `json:"id"`
-	Extra     map[string][]interface{}
+	Text          string    `json:"text"`
+	Channel       string    `json:"channel"`
+	Username      string    `json:"username"`
+	UserID        string    `json:"userid"` // userid on the bridge
+	Avatar        string    `json:"avatar"`
+	Account       string    `json:"account"`
+	Event         string    `json:"event"`
+	Protocol      string    `json:"protocol"`
+	Gateway       string    `json:"gateway"`
+	ParentID      string    `json:"parent_id"`
+	Timestamp     time.Time `json:"timestamp"`
+	ID            string    `json:"id"`
+	Extra         map[string][]interface{}
+	OrigMsg       *Message
+	IsTranslation bool
 }
 
 type FileInfo struct {
@@ -131,11 +133,13 @@ type Protocol struct {
 	WebhookBindAddress     string     // mattermost, slack
 	WebhookURL             string     // mattermost, slack
 	WebhookUse             string     // mattermost, slack, discord
+	TranslationAttribution string     // all protocols
 }
 
 type ChannelOptions struct {
 	Key        string // irc, xmpp
 	WebhookURL string // discord
+	Locale     string // all
 }
 
 type Bridge struct {

@@ -74,8 +74,11 @@ const (
 	apiProtocol = "api"
 )
 
-func New(cfg config.Gateway, r *Router) *Gateway {
+func init() {
 	flog = log.WithFields(log.Fields{"prefix": "gateway"})
+}
+
+func New(cfg config.Gateway, r *Router) *Gateway {
 	gw := &Gateway{Channels: make(map[string]*config.ChannelInfo), Message: r.Message,
 		Router: r, Bridges: make(map[string]*bridge.Bridge), Config: r.Config}
 	cache, _ := lru.New(5000)
@@ -290,6 +293,10 @@ func (gw *Gateway) handleMessage(msg config.Message, dest *bridge.Bridge) []*BrM
 	origmsg := msg
 	channels := gw.getDestChannel(&msg, *dest)
 	for _, channel := range channels {
+		msg.Text = origmsg.Text
+		msg.OrigMsg = &origmsg
+		msg.IsTranslation = false
+
 		// Only send the avatar download event to ourselves.
 		if msg.Event == config.EventAvatarDownload {
 			if channel.ID != getChannelID(origmsg) {
@@ -310,6 +317,11 @@ func (gw *Gateway) handleMessage(msg config.Message, dest *bridge.Bridge) []*BrM
 		msg.Channel = channel.Name
 		msg.Avatar = gw.modifyAvatar(origmsg, dest)
 		msg.Username = gw.modifyUsername(origmsg, dest)
+		msg.ID = ""
+
+		if gw.translationEnabled() {
+			gw.handleTranslation(&msg, dest, channel)
+		}
 
 		msg.ID = gw.getDestMsgID(origmsg.Protocol+" "+origmsg.ID, dest, channel)
 
