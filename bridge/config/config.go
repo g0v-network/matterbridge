@@ -23,6 +23,7 @@ const (
 	EVENT_USER_ACTION       = "user_action"
 	EVENT_MSG_DELETE        = "msg_delete"
 	EVENT_API_CONNECTED     = "api_connected"
+	EVENT_RELOAD_CONFIG     = "reload_config"
 )
 
 type Message struct {
@@ -211,6 +212,7 @@ func NewConfig(cfgfile string) *Config {
 	}
 	viper.WatchConfig()
 	viper.OnConfigChange(func(e fsnotify.Event) {
+		viper.Unmarshal(&cfg)
 		flog.Println("Config file changed:", e.Name)
 	})
 

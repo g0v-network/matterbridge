@@ -59,6 +59,35 @@ func (r *Router) Start() error {
 	return nil
 }
 
+func (r *Router) Stop() error {
+	for _, gw := range r.Gateways {
+		for _, br := range gw.Bridges {
+			err := br.Disconnect()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (r *Router) Restart() error {
+	if err := r.Stop(); err != nil {
+		return err
+	}
+
+	r, err = NewRouter(r.Config)
+	if err != nil {
+		return err
+	}
+
+	if err = r.Start(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *Router) getBridge(account string) *bridge.Bridge {
 	for _, gw := range r.Gateways {
 		if br, ok := gw.Bridges[account]; ok {
@@ -70,6 +99,9 @@ func (r *Router) getBridge(account string) *bridge.Bridge {
 
 func (r *Router) handleReceive() {
 	for msg := range r.Message {
+		if msg.Event == config.EVENT_RELOAD_CONFIG {
+			go r.Restart()
+		}
 		if msg.Event == config.EVENT_FAILURE {
 		Loop:
 			for _, gw := range r.Gateways {

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -13,9 +14,11 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/zfjagann/golang-ring"
+	"github.com/spf13/viper"
 )
 
 type Api struct {
+	Server *echo.Echo
 	Messages ring.Ring
 	sync.RWMutex
 	*bridge.Config
@@ -30,8 +33,8 @@ type ApiMessage struct {
 }
 
 func New(cfg *bridge.Config) bridge.Bridger {
-	b := &Api{Config: cfg}
 	e := echo.New()
+	b := &Api{Config: cfg, Server: e}
 	e.HideBanner = true
 	e.HidePort = true
 	b.Messages = ring.Ring{}
@@ -49,20 +52,24 @@ func New(cfg *bridge.Config) bridge.Bridger {
 	e.GET("/api/messages", b.handleMessages)
 	e.GET("/api/stream", b.handleStream)
 	e.POST("/api/message", b.handlePostMessage)
+	return b
+}
+
+func (b *Api) Connect() error {
 	go func() {
 		if b.GetString("BindAddress") == "" {
 			b.Log.Fatalf("No BindAddress configured.")
 		}
 		b.Log.Infof("Listening on %s", b.GetString("BindAddress"))
-		b.Log.Fatal(e.Start(b.GetString("BindAddress")))
+		b.Log.Info(b.Server.Start(b.GetString("BindAddress")))
 	}()
-	return b
-}
-
-func (b *Api) Connect() error {
 	return nil
 }
 func (b *Api) Disconnect() error {
+	ctx := context.Background()
+	if err := b.Server.Shutdown(ctx); err != nil {
+		b.Log.Info(err)
+	}
 	return nil
 
 }
@@ -116,7 +123,9 @@ func (b *Api) handleConfigReload(c echo.Context) error {
 		b.Log.Error("Failed to write remote config file: ", err)
 		return c.String(http.StatusInternalServerError, "Internal Server Error")
 	}
+	viper.ReadInConfig()
 
+	b.Remote <- config.Message{Username: "system", Text: config.EVENT_RELOAD_CONFIG, Channel: "api", Account: "", Event: config.EVENT_RELOAD_CONFIG}
 	return c.String(http.StatusAccepted, "Accepted")
 }
 

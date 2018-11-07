@@ -1228,6 +1228,13 @@ Buffer=1000
 #OPTIONAL (no authorization if token is empty)
 Token="mytoken"
 
+#URL from which to fetch and reload configuration with API call:
+#  PUT /api/reload
+#Note: Affects global configuration, not just bridge or gateway!
+#Highly recommended to use token auth if using this.
+#OPTIONAL (default empty)
+ConfigURL="https://example.com/matterbridge.toml"
+
 #extra label that can be used in the RemoteNickFormat
 #optional (default empty)
 Label=""
