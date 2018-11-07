@@ -66,6 +66,7 @@ type Protocol struct {
 	Buffer                 int    // api
 	Charset                string // irc
 	ColorNicks             bool   // only irc for now
+	ConfigURL              string // api
 	Debug                  bool   // general
 	DebugLevel             int    // only for irc now
 	EditSuffix             string // mattermost, slack, discord, telegram, gitter
@@ -172,6 +173,7 @@ type ConfigValues struct {
 	General            Protocol
 	Gateway            []Gateway
 	SameChannelGateway []SameChannelGateway
+	ConfigFile         string
 }
 
 type Config struct {
@@ -212,6 +214,7 @@ func NewConfig(cfgfile string) *Config {
 		flog.Println("Config file changed:", e.Name)
 	})
 
+	mycfg.v.Set("ConfigFile", cfgfile)
 	mycfg.ConfigValues = &cfg
 	return mycfg
 }
@@ -231,6 +234,10 @@ func NewConfigFromString(input []byte) *Config {
 	mycfg.v = viper.GetViper()
 	mycfg.ConfigValues = &cfg
 	return mycfg
+}
+
+func (c *Config) GetConfigFile() string {
+	return c.v.GetString("ConfigFile")
 }
 
 func (c *Config) GetBool(key string) bool {
