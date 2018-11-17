@@ -27,7 +27,8 @@ import (
 	btelegram "github.com/42wim/matterbridge/bridge/telegram"
 	bxmpp "github.com/42wim/matterbridge/bridge/xmpp"
 	bzulip "github.com/42wim/matterbridge/bridge/zulip"
-	"github.com/hashicorp/golang-lru"
+	"github.com/42wim/matterbridge/cache/base"
+	"github.com/42wim/matterbridge/cache/lru"
 	"github.com/peterhellberg/emojilib"
 	log "github.com/sirupsen/logrus"
 )
@@ -42,7 +43,7 @@ type Gateway struct {
 	ChannelOptions map[string]config.ChannelOptions
 	Message        chan config.Message
 	Name           string
-	Messages       *lru.Cache
+	Messages       base.Cache
 }
 
 type BrMsgID struct {
