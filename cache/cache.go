@@ -1,6 +1,6 @@
-package base
+package cache
 
-type Cache interface {
+type CacheInterface interface {
 	Add(key, value interface{}) bool
 	Get(key interface{}) (value interface{}, ok bool)
 	Peek(key interface{}) (value interface{}, ok bool)
