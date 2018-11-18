@@ -12,7 +12,8 @@ import (
 	"github.com/42wim/matterbridge/bridge/config"
 	"github.com/42wim/matterbridge/bridge/helper"
 	"github.com/42wim/matterbridge/matterhook"
-	"github.com/hashicorp/golang-lru"
+	"github.com/42wim/matterbridge/cache"
+	"github.com/42wim/matterbridge/cache/lru"
 	"github.com/nlopes/slack"
 	"github.com/rs/xid"
 )
@@ -26,7 +27,7 @@ type Bslack struct {
 	rtm *slack.RTM
 	si  *slack.Info
 
-	cache        *lru.Cache
+	cache        cache.CacheInterface
 	uuid         string
 	useChannelID bool
 
