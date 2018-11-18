@@ -98,7 +98,7 @@ func (gw *Gateway) FindCanonicalMsgID(protocol string, mID string) string {
 		ids := v.([]*BrMsgID)
 		for _, downstreamMsgObj := range ids {
 			if ID == downstreamMsgObj.ID {
-				return strings.Replace(mid.(string), protocol+" ", "", 1)
+				return strings.Replace(mid, protocol+" ", "", 1)
 			}
 		}
 	}
@@ -230,7 +230,7 @@ func (gw *Gateway) getDestChannel(msg *config.Message, dest bridge.Bridge) []con
 }
 
 func (gw *Gateway) getDestMsgID(msgID string, dest *bridge.Bridge, channel config.ChannelInfo) string {
-	if res, ok := gw.Messages.Get(dest.Protocol + " " + msgID); ok {
+	if res, ok := gw.Messages.Get(msgID); ok {
 		IDs := res.([]*BrMsgID)
 		for _, id := range IDs {
 			// check protocol, bridge name and channelname

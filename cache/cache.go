@@ -1,9 +1,9 @@
 package cache
 
 type CacheInterface interface {
-	Add(key, value interface{}) bool
-	Get(key interface{}) (value interface{}, ok bool)
-	Peek(key interface{}) (value interface{}, ok bool)
-	Keys() []interface{}
-	Contains(key interface{}) bool
+	Add(key string, value interface{}) bool
+	Get(key string) (value interface{}, ok bool)
+	Peek(key string) (value interface{}, ok bool)
+	Keys() []string
+	Contains(key string) bool
 }

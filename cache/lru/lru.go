@@ -3,29 +3,37 @@ package lru
 import "github.com/hashicorp/golang-lru"
 
 type LRU struct {
-	*lru.Cache
+	cache *lru.Cache
 }
 
-func New(size int) (*lru.Cache, error) {
-	return lru.New(size)
+func New(size int) (*LRU, error) {
+	c, err := lru.New(size)
+	cache := &LRU{cache: c}
+	return cache, err
 }
 
-func (cache LRU) Add(key, value interface{}) bool {
-	return cache.Add(key, value)
+func (c LRU) Add(key string, value interface{}) bool {
+	return c.cache.Add(key, value)
 }
 
-func (cache LRU) Get(key interface{}) (value interface{}, ok bool) {
-	return cache.Get(key)
+func (c LRU) Get(key string) (value interface{}, ok bool) {
+	return c.cache.Get(key)
 }
 
-func (cache LRU) Peek(key interface{}) (value interface{}, ok bool) {
-	return cache.Peek(key)
+func (c LRU) Peek(key string) (value interface{}, ok bool) {
+	return c.cache.Peek(key)
 }
 
-func (cache LRU) Keys() []interface{} {
-	return cache.Keys()
+func (c LRU) Keys() []string {
+	// We get back []interface{} which we need as []string
+	iKeys := c.cache.Keys()
+	sKeys := make([]string, len(iKeys))
+	for i := 0; i < len(sKeys); i++ {
+		sKeys[i] = iKeys[i].(string)
+	}
+	return sKeys
 }
 
-func (cache LRU) Contains(key interface{}) bool {
-	return cache.Contains(key)
+func (c LRU) Contains(key string) bool {
+	return c.cache.Contains(key)
 }
