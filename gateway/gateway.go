@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,8 +14,8 @@ import (
 	"time"
 
 	"github.com/vmihailenco/msgpack"
+	"github.com/abronan/valkeyrie"
 	"github.com/abronan/valkeyrie/store"
-	"github.com/abronan/valkeyrie/store/boltdb"
 	"github.com/42wim/matterbridge/bridge"
 	"github.com/42wim/matterbridge/bridge/api"
 	"github.com/42wim/matterbridge/bridge/config"
@@ -81,9 +82,25 @@ func New(cfg config.Gateway, r *Router) *Gateway {
 	gw := &Gateway{Channels: make(map[string]*config.ChannelInfo), Message: r.Message,
 		Router: r, Bridges: make(map[string]*bridge.Bridge), Config: r.Config}
 
-	cache, err := boltdb.New([]string{"/tmp/not_exist_dir/__boltdbtest"}, &store.Config{Bucket: "MessageCache"})
+	dbURL, _ := url.ParseRequestURI(gw.BridgeValues().General.DatabaseURL)
+	var client string
+	var clientConfig store.Config
+	backend := store.Backend(dbURL.Scheme)
+	switch backend {
+	case store.BOLTDB:
+		client = dbURL.Path
+		clientConfig = store.Config{Bucket: "MessageCache"}
+	case store.REDIS:
+		// TODO: handle passwords
+		// See: https://github.com/abronan/valkeyrie/blob/master/store/redis/redis.go#L46
+		client = dbURL.Host
+		clientConfig = store.Config{}
+	default:
+		flog.Errorf("Unhandled key-value store backend: %s", backend)
+	}
+	cache, err := valkeyrie.NewStore(backend, []string{client}, &clientConfig)
 	if err != nil {
-		flog.Fatalf("Could not create BoltDB cache for Slack bridge: %v", err)
+		flog.Fatalf("Could not create %s cache for Slack bridge: %v", backend, err)
 	}
 	gw.Messages = cache
 	gw.AddConfig(&cfg)
@@ -245,7 +262,6 @@ func (gw *Gateway) getDestMsgID(msgID string, dest *bridge.Bridge, channel confi
 		for _, id := range IDs {
 			// check protocol, bridge name and channelname
 			// for people that reuse the same bridge multiple times. see #342
-			flog.Printf("%#v", id)
 			if dest.Protocol == id.br.Protocol && dest.Name == id.br.Name && channel.ID == id.ChannelID {
 				return strings.Replace(id.ID, dest.Protocol+" ", "", 1)
 			}

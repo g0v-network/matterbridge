@@ -1319,6 +1319,10 @@ MediaDownloadBlacklist=[".html$",".htm$"]
 #OPTIONAL (default false)
 IgnoreFailureOnStart=false
 
+#Cache database in which to store message IDs and other data.
+#DatabaseURL="redis://:password@localhost:1234"
+DatabaseURL="boltdb:///tmp/not_exist_dir/__bolt.db"
+
 ###################################################################
 #Gateway configuration
 ###################################################################

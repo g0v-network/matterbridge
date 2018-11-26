@@ -11,7 +11,6 @@ require (
 	github.com/dgrijalva/jwt-go v0.0.0-20170508165458-6c8dedd55f8a // indirect
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
-	github.com/golang/protobuf v0.0.0-20170613224224-e325f446bebc // indirect
 	github.com/google/gops v0.3.5
 	github.com/gopherjs/gopherjs v0.0.0-20180628210949-0892b62f0d9f // indirect
 	github.com/gorilla/schema v1.0.2
@@ -69,11 +68,12 @@ require (
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1 // indirect
 	golang.org/x/crypto v0.0.0-20181112202954-3d3f9f413869 // indirect
-	golang.org/x/net v0.0.0-20180108090419-434ec0c7fe37 // indirect
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
 	golang.org/x/sys v0.0.0-20181116161606-93218def8b18 // indirect
+	google.golang.org/appengine v1.3.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
+	gopkg.in/redis.v5 v5.2.9 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 )

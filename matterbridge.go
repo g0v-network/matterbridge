@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/abronan/valkeyrie/store/boltdb"
+	"github.com/abronan/valkeyrie/store/redis"
 	"github.com/42wim/matterbridge/bridge/config"
 	"github.com/42wim/matterbridge/gateway"
 	"github.com/google/gops/agent"
@@ -21,6 +22,7 @@ var (
 
 func init() {
 	boltdb.Register()
+	redis.Register()
 }
 
 func main() {
