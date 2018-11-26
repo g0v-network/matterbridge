@@ -11,6 +11,10 @@ github.com/Philipp15b/go-steam/protocol/gamecoordinator
 github.com/Philipp15b/go-steam/protocol/protobuf
 github.com/Philipp15b/go-steam/rwu
 github.com/Philipp15b/go-steam/socialcache
+# github.com/abronan/valkeyrie v0.0.0-20181122204256-88d3244c1299
+github.com/abronan/valkeyrie
+github.com/abronan/valkeyrie/store
+github.com/abronan/valkeyrie/store/boltdb
 # github.com/bwmarrin/discordgo v0.19.0
 github.com/bwmarrin/discordgo
 # github.com/davecgh/go-spew v1.1.1
@@ -147,6 +151,8 @@ github.com/valyala/bytebufferpool
 github.com/valyala/fasttemplate
 # github.com/zfjagann/golang-ring v0.0.0-20141111230621-17637388c9f6
 github.com/zfjagann/golang-ring
+# go.etcd.io/bbolt v1.3.0
+go.etcd.io/bbolt
 # go.uber.org/atomic v1.3.2
 go.uber.org/atomic
 # go.uber.org/multierr v1.1.0
