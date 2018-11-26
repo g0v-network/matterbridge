@@ -157,7 +157,7 @@ var _ msgpack.CustomDecoder = (*BrMsgID)(nil)
 
 func (b *BrMsgID) EncodeMsgpack(enc *msgpack.Encoder) error {
 	fmt.Println("%#v", b.br)
-	return enc.EncodeMulti(&bridge.Bridge{Name: b.br.Name, Protocol: b.br.Protocol}, b.ID, b.ChannelID)
+	return enc.EncodeMulti(b.br, b.ID, b.ChannelID)
 }
 
 func (bmid *BrMsgID) DecodeMsgpack(dec *msgpack.Decoder) error {

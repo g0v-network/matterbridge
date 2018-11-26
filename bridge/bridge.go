@@ -1,6 +1,7 @@
 package bridge
 
 import (
+	"github.com/vmihailenco/msgpack"
 	"github.com/42wim/matterbridge/bridge/config"
 	log "github.com/sirupsen/logrus"
 
@@ -24,6 +25,17 @@ type Bridge struct {
 	Log      *log.Entry
 	Config   config.Config
 	General  *config.Protocol
+}
+
+var _ msgpack.CustomEncoder = (*Bridge)(nil)
+var _ msgpack.CustomDecoder = (*Bridge)(nil)
+
+func (b *Bridge) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeMulti(b.Name, b.Account, b.Protocol)
+}
+
+func (b *Bridge) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.DecodeMulti(&b.Name, &b.Account, &b.Protocol)
 }
 
 type Config struct {

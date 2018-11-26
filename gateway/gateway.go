@@ -104,7 +104,6 @@ func (gw *Gateway) FindCanonicalMsgID(protocol string, mID string) string {
 		flog.Printf("There was an error: %#v", err)
 	}
 	for _, pair := range pairs {
-		flog.Printf("%#v", pair)
 		ids := make([]*BrMsgID,10)
 		msgpack.Unmarshal(pair.Value, &ids)
 		for _, downstreamMsgObj := range ids {
