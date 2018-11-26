@@ -156,7 +156,6 @@ var _ msgpack.CustomEncoder = (*BrMsgID)(nil)
 var _ msgpack.CustomDecoder = (*BrMsgID)(nil)
 
 func (b *BrMsgID) EncodeMsgpack(enc *msgpack.Encoder) error {
-	fmt.Println("%#v", b.br)
 	return enc.EncodeMulti(b.br, b.ID, b.ChannelID)
 }
 
