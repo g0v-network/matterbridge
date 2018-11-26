@@ -98,7 +98,8 @@ func (gw *Gateway) FindCanonicalMsgID(protocol string, mID string) string {
 	}
 
 	// If not keyed, iterate through cache for downstream, and infer upstream.
-	pairs, err := gw.Messages.List("", nil)
+	// TODO: Submit PR to valkeyrie so that empty string prefix doesn't fail
+	pairs, err := gw.Messages.List("slack", nil)
 	if err != nil {
 		flog.Printf("There was an error: %#v", err)
 	}
