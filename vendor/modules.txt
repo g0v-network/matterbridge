@@ -12,9 +12,10 @@ github.com/Philipp15b/go-steam/protocol/protobuf
 github.com/Philipp15b/go-steam/rwu
 github.com/Philipp15b/go-steam/socialcache
 # github.com/abronan/valkeyrie v0.0.0-20181122204256-88d3244c1299
-github.com/abronan/valkeyrie
-github.com/abronan/valkeyrie/store
 github.com/abronan/valkeyrie/store/boltdb
+github.com/abronan/valkeyrie/store/redis
+github.com/abronan/valkeyrie/store
+github.com/abronan/valkeyrie
 # github.com/bwmarrin/discordgo v0.19.0
 github.com/bwmarrin/discordgo
 # github.com/davecgh/go-spew v1.1.1
@@ -27,7 +28,7 @@ github.com/dgrijalva/jwt-go
 github.com/fsnotify/fsnotify
 # github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 github.com/go-telegram-bot-api/telegram-bot-api
-# github.com/golang/protobuf v0.0.0-20170613224224-e325f446bebc
+# github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/protoc-gen-go/descriptor
 # github.com/google/gops v0.3.5
@@ -149,6 +150,9 @@ github.com/technoweenie/multipartstreamer
 github.com/valyala/bytebufferpool
 # github.com/valyala/fasttemplate v0.0.0-20170224212429-dcecefd839c4
 github.com/valyala/fasttemplate
+# github.com/vmihailenco/msgpack v4.0.1+incompatible
+github.com/vmihailenco/msgpack
+github.com/vmihailenco/msgpack/codes
 # github.com/zfjagann/golang-ring v0.0.0-20141111230621-17637388c9f6
 github.com/zfjagann/golang-ring
 # go.etcd.io/bbolt v1.3.0
@@ -179,6 +183,8 @@ golang.org/x/crypto/curve25519
 golang.org/x/crypto/ed25519
 golang.org/x/crypto/internal/chacha20
 golang.org/x/crypto/ed25519/internal/edwards25519
+# golang.org/x/net v0.0.0-20180724234803-3673e40ba225
+golang.org/x/net/context
 # golang.org/x/sys v0.0.0-20181116161606-93218def8b18
 golang.org/x/sys/unix
 golang.org/x/sys/windows
@@ -192,7 +198,24 @@ golang.org/x/text/transform
 golang.org/x/text/unicode/norm
 golang.org/x/text/encoding/internal/identifier
 golang.org/x/text/encoding/internal
+# google.golang.org/appengine v1.3.0
+google.golang.org/appengine/datastore
+google.golang.org/appengine
+google.golang.org/appengine/internal
+google.golang.org/appengine/internal/datastore
+google.golang.org/appengine/internal/app_identity
+google.golang.org/appengine/internal/modules
+google.golang.org/appengine/internal/base
+google.golang.org/appengine/internal/log
+google.golang.org/appengine/internal/remote_api
 # gopkg.in/natefinch/lumberjack.v2 v2.0.0
 gopkg.in/natefinch/lumberjack.v2
+# gopkg.in/redis.v5 v5.2.9
+gopkg.in/redis.v5
+gopkg.in/redis.v5/internal
+gopkg.in/redis.v5/internal/consistenthash
+gopkg.in/redis.v5/internal/hashtag
+gopkg.in/redis.v5/internal/pool
+gopkg.in/redis.v5/internal/proto
 # gopkg.in/yaml.v2 v2.2.1
 gopkg.in/yaml.v2
