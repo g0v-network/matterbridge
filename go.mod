@@ -4,6 +4,8 @@ require (
 	github.com/42wim/go-gitter v0.0.0-20170828205020-017310c2d557
 	github.com/BurntSushi/toml v0.0.0-20170318202913-d94612f9fc14 // indirect
 	github.com/Philipp15b/go-steam v1.0.1-0.20180818081528-681bd9573329
+	github.com/abronan/valkeyrie v0.0.0-20181122204256-88d3244c1299
+	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/bwmarrin/discordgo v0.19.0
 	github.com/dfordsoft/golib v0.0.0-20180902042739-76ee6ab99bec
 	github.com/dgrijalva/jwt-go v0.0.0-20170508165458-6c8dedd55f8a // indirect
@@ -59,8 +61,10 @@ require (
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
 	github.com/valyala/bytebufferpool v0.0.0-20160817181652-e746df99fe4a // indirect
 	github.com/valyala/fasttemplate v0.0.0-20170224212429-dcecefd839c4 // indirect
+	github.com/vmihailenco/msgpack v4.0.1+incompatible
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	github.com/zfjagann/golang-ring v0.0.0-20141111230621-17637388c9f6
+	go.etcd.io/bbolt v1.3.0 // indirect
 	go.uber.org/atomic v1.3.2 // indirect
 	go.uber.org/multierr v1.1.0 // indirect
 	go.uber.org/zap v1.9.1 // indirect

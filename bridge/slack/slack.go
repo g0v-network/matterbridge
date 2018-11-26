@@ -8,11 +8,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/abronan/valkeyrie/store"
+	"github.com/abronan/valkeyrie/store/boltdb"
 	"github.com/42wim/matterbridge/bridge"
 	"github.com/42wim/matterbridge/bridge/config"
 	"github.com/42wim/matterbridge/bridge/helper"
 	"github.com/42wim/matterbridge/matterhook"
-	"github.com/hashicorp/golang-lru"
 	"github.com/nlopes/slack"
 	"github.com/rs/xid"
 )
@@ -26,7 +27,7 @@ type Bslack struct {
 	rtm *slack.RTM
 	si  *slack.Info
 
-	cache        *lru.Cache
+	cache        store.Store
 	uuid         string
 	useChannelID bool
 
@@ -91,13 +92,14 @@ func New(cfg *bridge.Config) bridge.Bridger {
 }
 
 func newBridge(cfg *bridge.Config) *Bslack {
-	newCache, err := lru.New(5000)
+	uuid := xid.New().String()
+	newCache, err := boltdb.New([]string{"/tmp/not_exist_dir/__boltdbtest"}, &store.Config{Bucket: "SlackFileCache:"+uuid})
 	if err != nil {
-		cfg.Log.Fatalf("Could not create LRU cache for Slack bridge: %v", err)
+		cfg.Log.Fatalf("Could not create BoltDB cache for Slack bridge: %v", err)
 	}
 	b := &Bslack{
 		Config:                 cfg,
-		uuid:                   xid.New().String(),
+		uuid:                   uuid,
 		cache:                  newCache,
 		users:                  map[string]*slack.User{},
 		channelsByID:           map[string]*slack.Channel{},
@@ -437,8 +439,9 @@ func (b *Bslack) uploadFile(msg *config.Message, channelID string) {
 		// Because the result of the UploadFile is slower than the MessageEvent from slack
 		// we can't match on the file ID yet, so we have to match on the filename too.
 		ts := time.Now()
+		tsText, _ := ts.MarshalText()
 		b.Log.Debugf("Adding file %s to cache at %s with timestamp", fi.Name, ts.String())
-		b.cache.Add("filename"+fi.Name, ts)
+		b.cache.Put("filename"+fi.Name, tsText, nil)
 		initialComment := fmt.Sprintf("File from %s", msg.Username)
 		if fi.Comment != "" {
 			initialComment += fmt.Sprintf("with comment: %s", fi.Comment)
@@ -456,7 +459,7 @@ func (b *Bslack) uploadFile(msg *config.Message, channelID string) {
 		}
 		if res.ID != "" {
 			b.Log.Debugf("Adding file ID %s to cache with timestamp %s", res.ID, ts.String())
-			b.cache.Add("file"+res.ID, ts)
+			b.cache.Put("file"+res.ID, tsText, nil)
 		}
 	}
 }
