@@ -427,6 +427,25 @@ func (b *Bslack) postMessage(msg *config.Message, channelInfo *slack.Channel) (s
 	}
 }
 
+func (b *Bslack) extractPreview(text string) string {
+	maxLength := 100
+	if len(text) > maxLength {
+		text = text[:maxLength] + "..."
+	}
+	// Strip newlines.
+	text = strings.Replace(text, "\n", " ", -1)
+	return text
+}
+
+func (b *Bslack) getPermalink(msg *config.Message) (string, error) {
+	ch, _ := b.getChannelByName(msg.Channel)
+	params := slack.PermalinkParameters{
+		Channel: ch.ID,
+		Ts:      msg.ID,
+	}
+	return b.sc.GetPermalink(&params)
+}
+
 func (b *Bslack) createTranslationAttach(msg *config.Message) []slack.Attachment {
 	var attachments []slack.Attachment
 
@@ -434,28 +453,23 @@ func (b *Bslack) createTranslationAttach(msg *config.Message) []slack.Attachment
 		return attachments
 	}
 
-	untranslatedTextPreview := msg.OrigMsg.Text
-	previewCharCount := 100
-	if len(msg.OrigMsg.Text) > previewCharCount {
-		untranslatedTextPreview = untranslatedTextPreview[:previewCharCount] + "..."
-	}
-	untranslatedTextPreview = strings.Replace(untranslatedTextPreview, "\n", " ", -1)
-	ch, err := b.getChannelByName(msg.OrigMsg.Channel)
-	params := slack.PermalinkParameters{
-		Channel: ch.ID,
-		Ts:      msg.OrigMsg.ID,
-	}
-	b.Log.Debugf("Generating permalink...")
-	permalink, err := b.sc.GetPermalink(&params)
-	if err != nil {
-		b.Log.Println(err)
+	untranslatedTextPreview := b.extractPreview(msg.OrigMsg.Text)
+	attach := slack.Attachment{
+		Color:    "ffffff",
+		Fallback: untranslatedTextPreview,
+		Footer:   b.Config.General.TranslationAttribution,
+		Text:     fmt.Sprintf("source: _%s_", untranslatedTextPreview),
 	}
 
-	attach := slack.Attachment{
-		Fallback:   untranslatedTextPreview,
-		Text:       fmt.Sprintf("<%s|%s>", permalink, untranslatedTextPreview),
-		Footer:     "g0v Translation Bridge" + b.Config.General.TranslationAttribution,
-		FooterIcon: "https://emoji.slack-edge.com/T02G2SXKM/g0v/541e38dfc833f04b.png",
+	// If we're relaying between channels on same Slack, generate a permalink
+	// and hyperlink for quick access to original untranslated message.
+	if msg.Account == msg.OrigMsg.Account {
+		b.Log.Debugf("Generating permalink...")
+		if permalink, err := b.getPermalink(msg.OrigMsg); err == nil {
+			attach.Text = fmt.Sprintf("<%s|source>: _%s_", permalink, untranslatedTextPreview)
+		} else {
+			b.Log.Debugf("Encountered and error fetching permalink: %#v", err)
+		}
 	}
 
 	attachments = append(attachments, attach)
@@ -518,10 +532,7 @@ func (b *Bslack) prepareMessageOptions(msg *config.Message) []slack.MsgOption {
 	// add file attachments
 	params.Attachments = append(params.Attachments, b.createAttach(msg.Extra)...)
 	// add translation attachment
-	if msg.IsTranslation {
-		// If source, then we're doing a translation
-		params.Attachments = append(params.Attachments, b.createTranslationAttach(msg)...)
-	}
+	params.Attachments = append(params.Attachments, b.createTranslationAttach(msg)...)
 	// add slack attachments (from another slack bridge)
 	if msg.Extra != nil {
 		for _, attach := range msg.Extra[sSlackAttachment] {
