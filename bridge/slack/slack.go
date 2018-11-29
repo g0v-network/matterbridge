@@ -455,15 +455,16 @@ func (b *Bslack) createTranslationAttach(msg *config.Message) []slack.Attachment
 
 	untranslatedTextPreview := b.extractPreview(msg.OrigMsg.Text)
 	attach := slack.Attachment{
-		Color:    "ffffff",
-		Fallback: untranslatedTextPreview,
-		Footer:   b.Config.General.TranslationAttribution,
-		Text:     fmt.Sprintf("source: _%s_", untranslatedTextPreview),
+		Color:      "ffffff",
+		Fallback:   untranslatedTextPreview,
+		Footer:     b.Config.General.TranslationAttribution,
+		Text:       fmt.Sprintf("source: _%s_", untranslatedTextPreview),
+		MarkdownIn: []string{"text"},
 	}
 
 	// If we're relaying between channels on same Slack, generate a permalink
 	// and hyperlink for quick access to original untranslated message.
-	if msg.Account == msg.OrigMsg.Account {
+	if b.Account == msg.OrigMsg.Account {
 		b.Log.Debugf("Generating permalink...")
 		if permalink, err := b.getPermalink(msg.OrigMsg); err == nil {
 			attach.Text = fmt.Sprintf("<%s|source>: _%s_", permalink, untranslatedTextPreview)
