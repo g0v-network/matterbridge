@@ -84,7 +84,8 @@ func New(cfg config.Gateway, r *Router) *Gateway {
 
 	// TODO: Should we instead inject this, and assume the same database type for who app?
 	// TODO: Should we set this globally? Per protocol? Per gateway?
-	dbURL, _ := url.ParseRequestURI(gw.BridgeValues().General.DatabaseURL)
+	dbString, _ := gw.GetString("General.DatabaseURL")
+	dbURL, _ := url.ParseRequestURI(dbString)
 	var client string
 	var clientConfig store.Config
 	backend := store.Backend(dbURL.Scheme)
