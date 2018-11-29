@@ -82,6 +82,8 @@ func New(cfg config.Gateway, r *Router) *Gateway {
 	gw := &Gateway{Channels: make(map[string]*config.ChannelInfo), Message: r.Message,
 		Router: r, Bridges: make(map[string]*bridge.Bridge), Config: r.Config}
 
+	// TODO: Should we instead inject this, and assume the same database type for who app?
+	// TODO: Should we set this globally? Per protocol? Per gateway?
 	dbURL, _ := url.ParseRequestURI(gw.BridgeValues().General.DatabaseURL)
 	var client string
 	var clientConfig store.Config
@@ -89,10 +91,12 @@ func New(cfg config.Gateway, r *Router) *Gateway {
 	switch backend {
 	case store.BOLTDB:
 		client = dbURL.Path
-		clientConfig = store.Config{Bucket: "MessageCache"}
+		clientConfig = store.Config{Bucket: "MessageCache."+gw.Name}
 	case store.REDIS:
 		// TODO: handle passwords
 		// See: https://github.com/abronan/valkeyrie/blob/master/store/redis/redis.go#L46
+		// TODO: How to choose redis database number (from dburl?)
+		// TODO: Do we want to use key prefixes to use a single db?
 		client = dbURL.Host
 		clientConfig = store.Config{}
 	default:
