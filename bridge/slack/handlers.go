@@ -307,10 +307,26 @@ func (b *Bslack) handleDownloadFile(rmsg *config.Message, file *slack.File) erro
 // (the assumption is that such name collisions will not occur within the given
 // timeframes).
 func (b *Bslack) fileCached(file *slack.File) bool {
-	if ts, ok := b.cache.Get("file" + file.ID); ok && time.Since(ts.(time.Time)) < time.Minute {
-		return true
-	} else if ts, ok = b.cache.Get("filename" + file.Name); ok && time.Since(ts.(time.Time)) < 10*time.Second {
-		return true
+	var ts time.Time
+	key := "file" + file.ID
+	pair, err := b.cache.Get(key, nil)
+	if err == nil {
+		ts = time.Now()
+		_ = ts.UnmarshalText(pair.Value)
+		if time.Since(ts) < time.Minute {
+			return true
+		}
 	}
+
+	key = "filename" + file.Name
+	pair, err = b.cache.Get(key, nil)
+	if err == nil {
+		ts = time.Now()
+		_ = ts.UnmarshalText(pair.Value)
+		if time.Since(ts) < 10*time.Second {
+			return true
+		}
+	}
+
 	return false
 }

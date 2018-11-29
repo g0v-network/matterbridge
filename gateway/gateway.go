@@ -6,12 +6,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
+	"github.com/vmihailenco/msgpack"
+	"github.com/abronan/valkeyrie"
+	"github.com/abronan/valkeyrie/store"
 	"github.com/42wim/matterbridge/bridge"
 	"github.com/42wim/matterbridge/bridge/api"
 	"github.com/42wim/matterbridge/bridge/config"
@@ -27,7 +31,6 @@ import (
 	btelegram "github.com/42wim/matterbridge/bridge/telegram"
 	bxmpp "github.com/42wim/matterbridge/bridge/xmpp"
 	bzulip "github.com/42wim/matterbridge/bridge/zulip"
-	"github.com/hashicorp/golang-lru"
 	"github.com/peterhellberg/emojilib"
 	log "github.com/sirupsen/logrus"
 )
@@ -42,7 +45,7 @@ type Gateway struct {
 	ChannelOptions map[string]config.ChannelOptions
 	Message        chan config.Message
 	Name           string
-	Messages       *lru.Cache
+	Messages       store.Store
 }
 
 type BrMsgID struct {
@@ -81,7 +84,31 @@ func init() {
 func New(cfg config.Gateway, r *Router) *Gateway {
 	gw := &Gateway{Channels: make(map[string]*config.ChannelInfo), Message: r.Message,
 		Router: r, Bridges: make(map[string]*bridge.Bridge), Config: r.Config}
-	cache, _ := lru.New(5000)
+
+	// TODO: Should we instead inject this, and assume the same database type for who app?
+	// TODO: Should we set this globally? Per protocol? Per gateway?
+	dbURL, _ := url.ParseRequestURI(gw.BridgeValues().General.DatabaseURL)
+	var client string
+	var clientConfig store.Config
+	backend := store.Backend(dbURL.Scheme)
+	switch backend {
+	case store.BOLTDB:
+		client = dbURL.Path
+		clientConfig = store.Config{Bucket: "MessageCache."+gw.Name}
+	case store.REDIS:
+		// TODO: handle passwords
+		// See: https://github.com/abronan/valkeyrie/blob/master/store/redis/redis.go#L46
+		// TODO: How to choose redis database number (from dburl?)
+		// TODO: Do we want to use key prefixes to use a single db?
+		client = dbURL.Host
+		clientConfig = store.Config{}
+	default:
+		flog.Errorf("Unhandled key-value store backend: %s", backend)
+	}
+	cache, err := valkeyrie.NewStore(backend, []string{client}, &clientConfig)
+	if err != nil {
+		flog.Fatalf("Could not create %s cache for Slack bridge: %v", backend, err)
+	}
 	gw.Messages = cache
 	gw.AddConfig(&cfg)
 	return gw
@@ -90,17 +117,22 @@ func New(cfg config.Gateway, r *Router) *Gateway {
 // Find the canonical ID that the message is keyed under in cache
 func (gw *Gateway) FindCanonicalMsgID(protocol string, mID string) string {
 	ID := protocol + " " + mID
-	if gw.Messages.Contains(ID) {
+	if ok, _ := gw.Messages.Exists(ID, nil); ok {
 		return mID
 	}
 
 	// If not keyed, iterate through cache for downstream, and infer upstream.
-	for _, mid := range gw.Messages.Keys() {
-		v, _ := gw.Messages.Peek(mid)
-		ids := v.([]*BrMsgID)
+	// TODO: Submit PR to valkeyrie so that empty string prefix doesn't fail
+	pairs, err := gw.Messages.List("slack", nil)
+	if err != nil {
+		flog.Printf("There was an error: %#v", err)
+	}
+	for _, pair := range pairs {
+		ids := make([]*BrMsgID,10)
+		msgpack.Unmarshal(pair.Value, &ids)
 		for _, downstreamMsgObj := range ids {
 			if ID == downstreamMsgObj.ID {
-				return strings.Replace(mid.(string), protocol+" ", "", 1)
+				return strings.Replace(pair.Key, protocol+" ", "", 1)
 			}
 		}
 	}
@@ -153,7 +185,6 @@ RECONNECT:
 	flog.Infof("Reconnecting %s", br.Account)
 	err := br.Connect()
 	if err != nil {
-		flog.Errorf("Reconnection failed: %s. Trying again in 60 seconds", err)
 		time.Sleep(time.Second * 60)
 		goto RECONNECT
 	}
@@ -232,8 +263,9 @@ func (gw *Gateway) getDestChannel(msg *config.Message, dest bridge.Bridge) []con
 }
 
 func (gw *Gateway) getDestMsgID(msgID string, dest *bridge.Bridge, channel config.ChannelInfo) string {
-	if res, ok := gw.Messages.Get(msgID); ok {
-		IDs := res.([]*BrMsgID)
+	if pair, err := gw.Messages.Get(msgID, nil); err == nil {
+		IDs := make([]*BrMsgID, 10)
+		err = msgpack.Unmarshal(pair.Value, &IDs)
 		for _, id := range IDs {
 			// check protocol, bridge name and channelname
 			// for people that reuse the same bridge multiple times. see #342

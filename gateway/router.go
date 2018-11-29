@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/vmihailenco/msgpack"
 	"github.com/42wim/matterbridge/bridge"
 	"github.com/42wim/matterbridge/bridge/config"
 	samechannelgateway "github.com/42wim/matterbridge/gateway/samechannel"
@@ -156,10 +157,26 @@ func (r *Router) handleReceive() {
 					msgIDs = append(msgIDs, gw.handleMessage(msg, br)...)
 				}
 				// only add the message ID if it doesn't already exists
-				if _, ok := gw.Messages.Get(msg.Protocol + " " + msg.ID); !ok && msg.ID != "" {
-					gw.Messages.Add(msg.Protocol+" "+msg.ID, msgIDs)
+				key := msg.Protocol+" " +msg.ID
+				if _, err := gw.Messages.Get(key, nil); err != nil && msg.ID != "" {
+					bytesValue, err := msgpack.Marshal(&msgIDs)
+					if err != nil {
+						panic(err)
+					}
+					gw.Messages.Put(key, bytesValue, nil)
 				}
 			}
 		}
 	}
+}
+
+var _ msgpack.CustomEncoder = (*BrMsgID)(nil)
+var _ msgpack.CustomDecoder = (*BrMsgID)(nil)
+
+func (b *BrMsgID) EncodeMsgpack(enc *msgpack.Encoder) error {
+	return enc.EncodeMulti(b.br, b.ID, b.ChannelID)
+}
+
+func (bmid *BrMsgID) DecodeMsgpack(dec *msgpack.Decoder) error {
+	return dec.DecodeMulti(&bmid.br, &bmid.ID, &bmid.ChannelID)
 }

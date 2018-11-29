@@ -69,6 +69,7 @@ type Protocol struct {
 	Buffer                 int    // api
 	Charset                string // irc
 	ColorNicks             bool   // only irc for now
+	DatabaseURL            string // all protocols
 	Debug                  bool   // general
 	DebugLevel             int    // only for irc now
 	EditSuffix             string // mattermost, slack, discord, telegram, gitter

@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/abronan/valkeyrie/store/boltdb"
+	"github.com/abronan/valkeyrie/store/redis"
 	"github.com/42wim/matterbridge/bridge/config"
 	"github.com/42wim/matterbridge/gateway"
 	"github.com/google/gops/agent"
@@ -17,6 +19,11 @@ var (
 	version = "1.12.2-dev"
 	githash string
 )
+
+func init() {
+	boltdb.Register()
+	redis.Register()
+}
 
 func main() {
 	log.SetFormatter(&prefixed.TextFormatter{PrefixPadding: 13, DisableColors: true, FullTimestamp: true})

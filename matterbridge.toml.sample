@@ -1323,6 +1323,10 @@ IgnoreFailureOnStart=false
 # translated message. (This is required by Google's terms of service.)
 TranslationAttribution=" [translated by Google]"
 
+#Cache database in which to store message IDs and other data.
+#DatabaseURL="redis://:password@localhost:1234"
+DatabaseURL="boltdb:///tmp/not_exist_dir/__bolt.db"
+
 ###################################################################
 #Gateway configuration
 ###################################################################
