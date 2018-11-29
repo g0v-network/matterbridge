@@ -103,6 +103,9 @@ func New(cfg config.Gateway, r *Router) *Gateway {
 		// TODO: Do we want to use key prefixes to use a single db?
 		client = dbURL.Host
 		clientConfig = store.Config{}
+		if pw, ok := dbURL.User.Password(); ok {
+			clientConfig.Password = pw
+		}
 	default:
 		flog.Errorf("Unhandled key-value store backend: %s", backend)
 	}
