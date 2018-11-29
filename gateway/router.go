@@ -1,20 +1,27 @@
 package gateway
 
 import (
+	"context"
+	b64 "encoding/base64"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/42wim/matterbridge/bridge"
 	"github.com/42wim/matterbridge/bridge/config"
 	samechannelgateway "github.com/42wim/matterbridge/gateway/samechannel"
+	"cloud.google.com/go/translate"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 )
 
 type Router struct {
 	config.Config
 
-	Gateways         map[string]*Gateway
-	Message          chan config.Message
+	Gateways map[string]*Gateway
+	Message  chan config.Message
 	MattermostPlugin chan config.Message
+	GTClient *translate.Client
 }
 
 func NewRouter(cfg config.Config) (*Router, error) {
@@ -26,6 +33,17 @@ func NewRouter(cfg config.Config) (*Router, error) {
 	}
 	sgw := samechannelgateway.New(cfg)
 	gwconfigs := sgw.GetConfig()
+
+	var err error
+	ctx := context.Background()
+	credsJson, _ := b64.StdEncoding.DecodeString(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS_BASE64"))
+	creds, _ := google.CredentialsFromJSON(ctx, credsJson, translate.Scope)
+	r.GTClient, err = translate.NewClient(ctx, option.WithCredentials(creds))
+	if err != nil {
+		flog.Warnf("Google Translate API failed to authorize: %#v", err)
+	} else {
+		flog.Infof("Google Translation enabled.")
+	}
 
 	for _, entry := range append(gwconfigs, cfg.BridgeValues().Gateway...) {
 		if !entry.Enable {

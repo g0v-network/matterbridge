@@ -1319,6 +1319,10 @@ MediaDownloadBlacklist=[".html$",".htm$"]
 #OPTIONAL (default false)
 IgnoreFailureOnStart=false
 
+# When Google Translate API feature is enabled, this will be appended to each
+# translated message. (This is required by Google's terms of service.)
+TranslationAttribution=" [translated by Google]"
+
 ###################################################################
 #Gateway configuration
 ###################################################################

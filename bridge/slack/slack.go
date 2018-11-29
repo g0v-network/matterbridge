@@ -303,12 +303,13 @@ func (b *Bslack) sendRTM(msg config.Message) (string, error) {
 		return msg.ID, err
 	}
 
-	messageParameters := b.prepareMessageParameters(&msg)
-
 	// Upload a file if it exists.
 	if msg.Extra != nil {
-		for _, rmsg := range helper.HandleExtra(&msg, b.General) {
-			_, _, err = b.rtm.PostMessage(channelInfo.ID, rmsg.Username+rmsg.Text, *messageParameters)
+		extraMsgs := helper.HandleExtra(&msg, b.General)
+		for i := range extraMsgs {
+			rmsg := &extraMsgs[i]
+			rmsg.Text = rmsg.Username + rmsg.Text
+			_, err = b.postMessage(rmsg, channelInfo)
 			if err != nil {
 				b.Log.Error(err)
 			}
@@ -318,7 +319,7 @@ func (b *Bslack) sendRTM(msg config.Message) (string, error) {
 	}
 
 	// Post message.
-	return b.postMessage(&msg, messageParameters, channelInfo)
+	return b.postMessage(&msg, channelInfo)
 }
 
 func (b *Bslack) updateTopicOrPurpose(msg *config.Message, channelInfo *slack.Channel) (bool, error) {
@@ -391,9 +392,10 @@ func (b *Bslack) editMessage(msg *config.Message, channelInfo *slack.Channel) (b
 	if msg.ID == "" {
 		return false, nil
 	}
-
+	messageOptions := b.prepareMessageOptions(msg)
 	for {
-		_, _, _, err := b.rtm.UpdateMessage(channelInfo.ID, msg.ID, msg.Text)
+		messageOptions = append(messageOptions, slack.MsgOptionText(msg.Text, false))
+		_, _, _, err := b.rtm.UpdateMessage(channelInfo.ID, msg.ID, messageOptions...)
 		if err == nil {
 			return true, nil
 		}
@@ -405,13 +407,15 @@ func (b *Bslack) editMessage(msg *config.Message, channelInfo *slack.Channel) (b
 	}
 }
 
-func (b *Bslack) postMessage(msg *config.Message, messageParameters *slack.PostMessageParameters, channelInfo *slack.Channel) (string, error) {
+func (b *Bslack) postMessage(msg *config.Message, channelInfo *slack.Channel) (string, error) {
 	// don't post empty messages
 	if msg.Text == "" {
 		return "", nil
 	}
+	messageOptions := b.prepareMessageOptions(msg)
+	messageOptions = append(messageOptions, slack.MsgOptionText(msg.Text, false))
 	for {
-		_, id, err := b.rtm.PostMessage(channelInfo.ID, msg.Text, *messageParameters)
+		_, id, err := b.rtm.PostMessage(channelInfo.ID, messageOptions...)
 		if err == nil {
 			return id, nil
 		}
@@ -421,6 +425,57 @@ func (b *Bslack) postMessage(msg *config.Message, messageParameters *slack.PostM
 			return "", err
 		}
 	}
+}
+
+func (b *Bslack) extractPreview(text string) string {
+	maxLength := 100
+	if len(text) > maxLength {
+		text = text[:maxLength] + "..."
+	}
+	// Strip newlines.
+	text = strings.Replace(text, "\n", " ", -1)
+	return text
+}
+
+func (b *Bslack) getPermalink(msg *config.Message) (string, error) {
+	ch, _ := b.getChannelByName(msg.Channel)
+	params := slack.PermalinkParameters{
+		Channel: ch.ID,
+		Ts:      msg.ID,
+	}
+	return b.sc.GetPermalink(&params)
+}
+
+func (b *Bslack) createTranslationAttach(msg *config.Message) []slack.Attachment {
+	var attachments []slack.Attachment
+
+	if msg.IsTranslation == false {
+		return attachments
+	}
+
+	untranslatedTextPreview := b.extractPreview(msg.OrigMsg.Text)
+	attach := slack.Attachment{
+		Color:      "ffffff",
+		Fallback:   untranslatedTextPreview,
+		Footer:     b.Config.General.TranslationAttribution,
+		Text:       fmt.Sprintf("source: _%s_", untranslatedTextPreview),
+		MarkdownIn: []string{"text"},
+	}
+
+	// If we're relaying between channels on same Slack, generate a permalink
+	// and hyperlink for quick access to original untranslated message.
+	if b.Account == msg.OrigMsg.Account {
+		b.Log.Debugf("Generating permalink...")
+		if permalink, err := b.getPermalink(msg.OrigMsg); err == nil {
+			attach.Text = fmt.Sprintf("<%s|source>: _%s_", permalink, untranslatedTextPreview)
+		} else {
+			b.Log.Debugf("Encountered and error fetching permalink: %#v", err)
+		}
+	}
+
+	attachments = append(attachments, attach)
+
+	return attachments
 }
 
 // uploadFile handles native upload of files
@@ -461,7 +516,7 @@ func (b *Bslack) uploadFile(msg *config.Message, channelID string) {
 	}
 }
 
-func (b *Bslack) prepareMessageParameters(msg *config.Message) *slack.PostMessageParameters {
+func (b *Bslack) prepareMessageOptions(msg *config.Message) []slack.MsgOption {
 	params := slack.NewPostMessageParameters()
 	if b.GetBool(useNickPrefixConfig) {
 		params.AsUser = true
@@ -477,13 +532,18 @@ func (b *Bslack) prepareMessageParameters(msg *config.Message) *slack.PostMessag
 	params.Attachments = append(params.Attachments, slack.Attachment{CallbackID: "matterbridge_" + b.uuid})
 	// add file attachments
 	params.Attachments = append(params.Attachments, b.createAttach(msg.Extra)...)
+	// add translation attachment
+	params.Attachments = append(params.Attachments, b.createTranslationAttach(msg)...)
 	// add slack attachments (from another slack bridge)
 	if msg.Extra != nil {
 		for _, attach := range msg.Extra[sSlackAttachment] {
 			params.Attachments = append(params.Attachments, attach.([]slack.Attachment)...)
 		}
 	}
-	return &params
+	var opts []slack.MsgOption
+	opts = append(opts, slack.MsgOptionAttachments(params.Attachments...))
+	opts = append(opts, slack.MsgOptionPostMessageParameters(params))
+	return opts
 }
 
 func (b *Bslack) createAttach(extra map[string][]interface{}) []slack.Attachment {
