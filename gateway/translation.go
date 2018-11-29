@@ -222,7 +222,12 @@ func (gw *Gateway) handleTranslation(msg *config.Message, dest *bridge.Bridge, c
 		return
 	}
 
-	// Don't try to translate empty messages
+	// Skip if not standard message or user action.
+	if !(msg.Event == "" || msg.Event == config.EventUserAction) {
+		return
+	}
+
+	// Don't try to translate empty messages.
 	if msg.OrigMsg.Text == "" {
 		return
 	}
