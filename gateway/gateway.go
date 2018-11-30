@@ -135,12 +135,24 @@ func (gw *Gateway) FindCanonicalMsgID(protocol string, mID string) string {
 		ids := make([]*BrMsgID,10)
 		msgpack.Unmarshal(pair.Value, &ids)
 		for _, downstreamMsgObj := range ids {
-			if ID == downstreamMsgObj.ID {
+			if normalizeID(ID) == normalizeID(downstreamMsgObj.ID) {
 				return strings.Replace(pair.Key, protocol+" ", "", 1)
 			}
 		}
 	}
 	return ""
+}
+
+// Allows matches independant of protocol,
+// eg: slack vs slack-legacy
+func normalizeID(id string) string {
+	fields := strings.Fields(id)
+	if len(fields) != 2 {
+		return id
+	}
+	protocol, mID := fields[0], fields[1]
+	baseProtocol := strings.Split(protocol, "-")[0]
+	return baseProtocol+" "+mID
 }
 
 func (gw *Gateway) AddBridge(cfg *config.Bridge) error {
