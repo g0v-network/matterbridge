@@ -65,7 +65,7 @@ func (b *Bslack) handleSlackClient(messages chan *config.Message) {
 			}
 			rmsg, err := b.handleMessageEvent(ev)
 			if err != nil {
-				b.Log.Errorf("%#v", err)
+				b.Log.Error(err)
 				continue
 			}
 			messages <- rmsg
