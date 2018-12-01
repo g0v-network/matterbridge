@@ -94,8 +94,6 @@ github.com/matterbridge/logrus-prefixed-formatter v0.0.0-20180806162718-01618749
 github.com/matterbridge/logrus-prefixed-formatter v0.0.0-20180806162718-01618749af61/go.mod h1:iXGEotOvwI1R1SjLxRc+BF5rUORTMtE0iMZBT2lxqAU=
 github.com/mattermost/mattermost-server v5.5.0+incompatible h1:0wcLGgYtd+YImtLDPf2AOfpBHxbU4suATx+6XKw1XbU=
 github.com/mattermost/mattermost-server v5.5.0+incompatible/go.mod h1:5L6MjAec+XXQwMIt791Ganu45GKsSiM+I0tLR9wUj8Y=
-github.com/mattermost/platform v5.5.0+incompatible h1:nsFkO/huLoX+pCLORtBvSVqrahWcHeYfeakVTVmCptM=
-github.com/mattermost/platform v5.5.0+incompatible/go.mod h1:HjGKtkQNu3HXTOykPMQckMnH11WHvNvQqDBNnVXVbfM=
 github.com/mattn/go-colorable v0.0.0-20170210172801-5411d3eea597 h1:hGizH4aMDFFt1iOA4HNKC13lqIBoCyxIjWcAnWIy7aU=
 github.com/mattn/go-colorable v0.0.0-20170210172801-5411d3eea597/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-isatty v0.0.0-20170216235908-dda3de49cbfc h1:pK7tzC30erKOTfEDCYGvPZQCkmM9X5iSmmAR5m9x3Yc=

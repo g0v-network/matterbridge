@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/golang-lru"
 	"github.com/jpillora/backoff"
 	prefixed "github.com/matterbridge/logrus-prefixed-formatter"
-	"github.com/mattermost/platform/model"
+	"github.com/mattermost/mattermost-server/model"
 	log "github.com/sirupsen/logrus"
 )
 

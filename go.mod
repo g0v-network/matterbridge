@@ -33,8 +33,7 @@ require (
 	github.com/matterbridge/gomatrix v0.0.0-20171224233421-78ac6a1a0f5f
 	github.com/matterbridge/gozulipbot v0.0.0-20180507190239-b6bb12d33544
 	github.com/matterbridge/logrus-prefixed-formatter v0.0.0-20180806162718-01618749af61
-	github.com/mattermost/mattermost-server v5.5.0+incompatible // indirect
-	github.com/mattermost/platform v5.5.0+incompatible
+	github.com/mattermost/mattermost-server v5.5.0+incompatible
 	github.com/mattn/go-colorable v0.0.0-20170210172801-5411d3eea597 // indirect
 	github.com/mattn/go-isatty v0.0.0-20170216235908-dda3de49cbfc // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
