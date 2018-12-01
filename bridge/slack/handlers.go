@@ -58,6 +58,13 @@ func (b *Bslack) handleSlackClient(messages chan *config.Message) {
 			}
 
 			messages <- rmsg
+		case *slack.ReactionAddedEvent, *slack.ReactionRemovedEvent:
+			rmsg, err := b.handleReactionEvent(ev)
+			if err != nil {
+				b.Log.Errorf("%#v", err)
+				continue
+			}
+			messages <- rmsg
 		case *slack.MessageEvent:
 			if b.skipMessageEvent(ev) {
 				b.Log.Debugf("Skipped message: %#v", ev)
@@ -270,6 +277,49 @@ func (b *Bslack) handleTypingEvent(ev *slack.UserTypingEvent) (*config.Message, 
 		Account: b.Account,
 		Event:   config.EventUserTyping,
 	}, nil
+}
+
+func (b *Bslack) handleReactionEvent(ev interface{}) (*config.Message, error) {
+	rmsg := &config.Message{
+		Account:  b.Account,
+		Protocol: b.Protocol,
+		Extra:    make(map[string][]interface{}),
+	}
+
+	switch ev.(type) {
+	case *slack.ReactionAddedEvent:
+		aev := ev.(*slack.ReactionAddedEvent)
+		user := b.getUser(aev.User)
+		channel, err := b.getChannelByID(aev.Item.Channel)
+		if err != nil {
+			return nil, err
+		}
+
+		rmsg.Event = sReactionAdded
+		rmsg.ParentID = aev.Item.Timestamp
+		rmsg.Text = aev.Reaction
+		rmsg.ID = aev.EventTimestamp
+		rmsg.Channel = channel.Name
+		rmsg.Username = user.Name
+		rmsg.UserID = user.ID
+	case *slack.ReactionRemovedEvent:
+		rev := ev.(*slack.ReactionRemovedEvent)
+		user := b.getUser(rev.User)
+		channel, err := b.getChannelByID(rev.Item.Channel)
+		if err != nil {
+			return nil, err
+		}
+
+		rmsg.Event = sReactionRemoved
+		rmsg.ParentID = rev.Item.Timestamp
+		rmsg.Text = rev.Reaction
+		rmsg.ID = rev.EventTimestamp
+		rmsg.Channel = channel.Name
+		rmsg.Username = user.Name
+		rmsg.UserID = user.ID
+	}
+
+	return rmsg, nil
 }
 
 // handleDownloadFile handles file download

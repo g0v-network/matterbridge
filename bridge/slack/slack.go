@@ -59,6 +59,8 @@ const (
 	sMeMessage       = "me_message"
 	sUserTyping      = "user_typing"
 	sLatencyReport   = "latency_report"
+	sReactionAdded   = "reaction_added"
+	sReactionRemoved = "reaction_removed"
 	sSystemUser      = "system"
 	sSlackBotUser    = "slackbot"
 
@@ -283,6 +285,11 @@ func (b *Bslack) sendRTM(msg config.Message) (string, error) {
 		return "", err
 	}
 
+	// Handle reaction messages
+	if handled, err = b.handleReactions(&msg, channelInfo); handled {
+		return "", err
+	}
+
 	// Handle prefix hint for unthreaded messages.
 	if msg.ParentID == "unthreaded" {
 		msg.ParentID = ""
@@ -344,6 +351,42 @@ func (b *Bslack) updateTopicOrPurpose(msg *config.Message, channelInfo *slack.Ch
 			return true, err
 		}
 	}
+}
+
+func (b *Bslack) handleReactions(msg *config.Message, channelInfo *slack.Channel) (bool, error) {
+	if msg.Event != "reaction_added" && msg.Event != "reaction_removed" {
+		return false, nil
+	}
+
+	if msg.ParentID == "" {
+		return false, nil
+	}
+
+	// Fetch the message being reacted to.
+	params := &slack.GetConversationHistoryParameters{
+		ChannelID: channelInfo.ID,
+		Latest:    msg.ParentID,
+		Limit:     1,
+		Inclusive: true,
+	}
+	res, _ := b.rtm.GetConversationHistory(params)
+
+	reactedMsg := res.Messages[0].Msg
+	// PoC: Append reacted emoji to end of msg
+	newText := fmt.Sprintf("%s :%s:", reactedMsg.Text, msg.Text)
+
+	for {
+		_, _, _, err := b.rtm.UpdateMessage(channelInfo.ID, msg.ParentID, newText)
+		if err == nil {
+			return true, nil
+		}
+
+		if err = b.handleRateLimit(err); err != nil {
+			b.Log.Errorf("Failed to edit user message on Slack: %#v", err)
+			return true, err
+		}
+	}
+	return true, nil
 }
 
 // handles updating topic/purpose and determining whether to further propagate update messages.
