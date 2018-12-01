@@ -19,15 +19,17 @@ import (
 type Router struct {
 	config.Config
 
-	Gateways map[string]*Gateway
-	Message  chan config.Message
+	BridgeMap        map[string]bridge.Factory
+	Gateways         map[string]*Gateway
+	Message          chan config.Message
 	MattermostPlugin chan config.Message
 	GTClient *translate.Client
 }
 
-func NewRouter(cfg config.Config) (*Router, error) {
+func NewRouter(cfg config.Config, bridgeMap map[string]bridge.Factory) (*Router, error) {
 	r := &Router{
 		Config:           cfg,
+		BridgeMap:        bridgeMap,
 		Message:          make(chan config.Message),
 		MattermostPlugin: make(chan config.Message),
 		Gateways:         make(map[string]*Gateway),

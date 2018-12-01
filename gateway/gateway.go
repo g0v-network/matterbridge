@@ -17,20 +17,7 @@ import (
 	"github.com/abronan/valkeyrie"
 	"github.com/abronan/valkeyrie/store"
 	"github.com/42wim/matterbridge/bridge"
-	"github.com/42wim/matterbridge/bridge/api"
 	"github.com/42wim/matterbridge/bridge/config"
-	bdiscord "github.com/42wim/matterbridge/bridge/discord"
-	bgitter "github.com/42wim/matterbridge/bridge/gitter"
-	birc "github.com/42wim/matterbridge/bridge/irc"
-	bmatrix "github.com/42wim/matterbridge/bridge/matrix"
-	bmattermost "github.com/42wim/matterbridge/bridge/mattermost"
-	brocketchat "github.com/42wim/matterbridge/bridge/rocketchat"
-	bslack "github.com/42wim/matterbridge/bridge/slack"
-	bsshchat "github.com/42wim/matterbridge/bridge/sshchat"
-	bsteam "github.com/42wim/matterbridge/bridge/steam"
-	btelegram "github.com/42wim/matterbridge/bridge/telegram"
-	bxmpp "github.com/42wim/matterbridge/bridge/xmpp"
-	bzulip "github.com/42wim/matterbridge/bridge/zulip"
 	"github.com/peterhellberg/emojilib"
 	log "github.com/sirupsen/logrus"
 )
@@ -55,23 +42,6 @@ type BrMsgID struct {
 }
 
 var flog *log.Entry
-
-var bridgeMap = map[string]bridge.Factory{
-	"api":          api.New,
-	"discord":      bdiscord.New,
-	"gitter":       bgitter.New,
-	"irc":          birc.New,
-	"mattermost":   bmattermost.New,
-	"matrix":       bmatrix.New,
-	"rocketchat":   brocketchat.New,
-	"slack-legacy": bslack.NewLegacy,
-	"slack":        bslack.New,
-	"sshchat":      bsshchat.New,
-	"steam":        bsteam.New,
-	"telegram":     btelegram.New,
-	"xmpp":         bxmpp.New,
-	"zulip":        bzulip.New,
-}
 
 const (
 	apiProtocol = "api"
@@ -166,7 +136,7 @@ func (gw *Gateway) AddBridge(cfg *config.Bridge) error {
 		br.Log = log.WithFields(log.Fields{"prefix": "bridge"})
 		brconfig := &bridge.Config{Remote: gw.Message, Log: log.WithFields(log.Fields{"prefix": br.Protocol}), Bridge: br}
 		// add the actual bridger for this protocol to this bridge using the bridgeMap
-		br.Bridger = bridgeMap[br.Protocol](brconfig)
+		br.Bridger = gw.Router.BridgeMap[br.Protocol](brconfig)
 	}
 	gw.mapChannelsToBridge(br)
 	gw.Bridges[cfg.Account] = br
@@ -315,14 +285,14 @@ func (gw *Gateway) handleMessage(msg config.Message, dest *bridge.Bridge) []*BrM
 	}
 
 	// only relay join/part when configured
-	if msg.Event == config.EventJoinLeave && !gw.Bridges[dest.Account].GetBool("ShowJoinPart") {
+	if msg.Event == config.EventJoinLeave && !dest.GetBool("ShowJoinPart") {
 		return brMsgIDs
 	}
 
 	// only relay topic change when used in some way on other side
 	if msg.Event == config.EventTopicChange &&
-		!gw.Bridges[dest.Account].GetBool("ShowTopicChange") &&
-		!gw.Bridges[dest.Account].GetBool("SyncTopic") {
+		dest.GetBool("ShowTopicChange") &&
+		dest.GetBool("SyncTopic") {
 		return brMsgIDs
 	}
 
@@ -334,7 +304,7 @@ func (gw *Gateway) handleMessage(msg config.Message, dest *bridge.Bridge) []*BrM
 
 	// Get the ID of the parent message in thread
 	var canonicalParentMsgID string
-	if msg.ParentID != "" && (gw.BridgeValues().General.PreserveThreading || dest.GetBool("PreserveThreading")) {
+	if msg.ParentID != "" && dest.GetBool("PreserveThreading") {
 		canonicalParentMsgID = gw.FindCanonicalMsgID(msg.Protocol, msg.ParentID)
 	}
 
@@ -455,14 +425,11 @@ func (gw *Gateway) ignoreMessage(msg *config.Message) bool {
 func (gw *Gateway) modifyUsername(msg config.Message, dest *bridge.Bridge) string {
 	br := gw.Bridges[msg.Account]
 	msg.Protocol = br.Protocol
-	if gw.BridgeValues().General.StripNick || dest.GetBool("StripNick") {
+	if dest.GetBool("StripNick") {
 		re := regexp.MustCompile("[^a-zA-Z0-9]+")
 		msg.Username = re.ReplaceAllString(msg.Username, "")
 	}
 	nick := dest.GetString("RemoteNickFormat")
-	if nick == "" {
-		nick = gw.BridgeValues().General.RemoteNickFormat
-	}
 
 	// loop to replace nicks
 	for _, outer := range br.GetStringSlice2D("ReplaceNicks") {
@@ -500,10 +467,7 @@ func (gw *Gateway) modifyUsername(msg config.Message, dest *bridge.Bridge) strin
 }
 
 func (gw *Gateway) modifyAvatar(msg config.Message, dest *bridge.Bridge) string {
-	iconurl := gw.BridgeValues().General.IconURL
-	if iconurl == "" {
-		iconurl = dest.GetString("IconURL")
-	}
+	iconurl := dest.GetString("IconURL")
 	iconurl = strings.Replace(iconurl, "{NICK}", msg.Username, -1)
 	if msg.Avatar == "" {
 		msg.Avatar = iconurl
